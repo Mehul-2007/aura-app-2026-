@@ -10,6 +10,12 @@ LOG_FILE = 'logs.json'
 USERS_FILE = 'users.json'
 HELP_FILE = 'help_requests.json'
 
+# Ensure files exist for production stability
+for f in [LOG_FILE, USERS_FILE, HELP_FILE]:
+    if not os.path.exists(f):
+        with open(f, 'w') as file:
+            json.dump([], file)
+
 @app.route('/')
 def index():
     return send_from_directory('.', 'index.html')
