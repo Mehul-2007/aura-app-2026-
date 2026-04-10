@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura | Assistive Obstacle Detection</title>
+    <meta name="description" content="Assistive obstacle detection system for the visually impaired.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PWA Integration -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Aura">
+    <link rel="apple-touch-icon" href="assets/icons/icon-512.png">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav id="navbar" class="navbar" aria-label="Main Navigation">
+        <div class="logo">
+            <span class="logo-text">Aura</span>
+            <div class="logo-dot"></div>
+        </div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#demo">Live Demo</a>
+            <a href="#features">Features</a>
+        </div>
+        <div class="nav-actions" style="display: flex; align-items: center; gap: 1rem;">
+            <span id="user-greeting" style="font-weight: 600; color: var(--accent-2);"></span>
+            <button id="waitlist-btn" class="btn-primary" aria-label="Join Waitlist">Join Waitlist</button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero" id="home">
+        <div class="hero-bg" style="background-image: url('assets/images/hero_bg.png');"></div>
+        <div class="hero-content">
+            <div class="badge">Next-Gen Vision AI</div>
+            <h1>See the World<br>Through <span class="gradient-text">Sound</span>.</h1>
+            <p class="subtitle">Aura translates visual surroundings into intuitive spatial audio, providing unprecedented independence for the visually impaired.</p>
+            <div class="hero-buttons">
+                <a href="#demo" class="btn-primary large" style="text-decoration:none;">Try Live Demo</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- LIVE CAMERA DEMO SECTION -->
+        <section id="demo" class="demo-section">
+            <div class="section-header">
+                <h2>Real-Time <span class="gradient-text">Camera Demo</span></h2>
+                <p>Try the object detection system right now. Grant camera access to see bounding boxes and distances.</p>
+            </div>
+            
+            <div class="app-container embedded">
+                <div class="header-embedded">
+                    <div class="status-wrap">
+                        <span class="status-indicator" id="status-indicator"></span>
+                        <span id="camera-status-text">Camera is off</span>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <button id="connect-bt" class="primary-cam" style="background: transparent; border: 1px solid var(--accent-1); color: var(--text-primary); padding: 0.5rem 1rem;" title="Connect Wearable Earpiece">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:5px;"><polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/></svg>
+                            Connect BT
+                        </button>
+                        <div class="badge" style="display:inline-flex; align-items:center; vertical-align:middle; margin-bottom:0; margin-right:15px; background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: var(--success); text-transform: none; padding: 0.4rem 0.8rem;">
+                            <span style="width: 8px; height: 8px; background: var(--success); border-radius: 50%; margin-right: 8px; display: inline-block; box-shadow: 0 0 8px var(--success);"></span>
+                            24/7 Priority Support
+                        </div>
+                        <button id="get-help" class="primary-cam" style="background-color: var(--danger); color: white; border: none; margin-right: 10px; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3);">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:5px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                            SOS HELP
+                        </button>
+                        <button id="toggle-camera" class="primary-cam">Start Camera</button>
+                    </div>
+                </div>
+
+                <div class="vision-area">
+                    <div class="camera-container">
+                        <video id="webcam" autoplay playsinline webkit-playsinline muted></video>
+                        <canvas id="overlay"></canvas>
+                        <div class="scanning-lines"></div>
+                        
+                        <div id="initial-state" class="state-overlay">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                            <h2>Camera is off</h2>
+                            <p>Click "Start Camera" above to enable logic.</p>
+                        </div>
+
+                        <div id="loading-state" class="state-overlay hidden">
+                            <div class="spinner"></div>
+                            <h2>Loading AI Model</h2>
+                            <p>Waking up Neural Network...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <aside class="details-panel" style="display: flex; flex-direction: column;">
+                    <div style="flex: 1; display: flex; flex-direction: column; border-bottom: 1px solid var(--border-color);">
+                        <div class="panel-header">
+                            <h3>Detected Objects</h3>
+                            <span id="detection-count" class="badge">0</span>
+                        </div>
+                        <ul id="detection-list" class="detection-list">
+                            <li class="empty-state">No objects detected yet.</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- RECENT USERS SECTION -->
+                    <div style="flex: 0.8; display: flex; flex-direction: column; background-color: rgba(0,0,0,0.5);">
+                        <div class="panel-header" style="background-color: transparent;">
+                            <h3>Recent Users</h3>
+                        </div>
+                        <ul id="recent-users-list" class="detection-list" style="flex: 1; font-size: 0.9rem;">
+                            <li class="empty-state">Loading users...</li>
+                        </ul>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section id="features" class="features">
+            <div class="section-header">
+                <h2>Empowering <span class="gradient-text">Independence</span></h2>
+                <p>Advanced AI working in real-time to analyze your environment and provide actionable feedback.</p>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="card-image">
+                        <!-- Use placeholder if generating failed or missing: fallback -->
+                        <img src="assets/images/feature_camera.png" alt="Real-time object detection processing" onerror="this.src='https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=600&q=80'">
+                    </div>
+                    <div class="card-content">
+                        <h3>Real-time Detection</h3>
+                        <p>Instantly identifies stairs, doors, obstacles, and people with high-precision bounding boxes.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="card-image">
+                        <img src="assets/images/feature_audio.png" alt="Spatial audio feedback illustration" onerror="this.src='https://images.unsplash.com/photo-1612284561066-db151c6b3dbd?auto=format&fit=crop&w=600&q=80'">
+                    </div>
+                    <div class="card-content">
+                        <h3>Spatial Audio</h3>
+                        <p>Obstacles are converted into directional audio cues, allowing you to build a mental map of your surroundings.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="card-image">
+                        <img src="assets/images/feature_bluetooth.png" alt="Bluetooth Wearables Support" onerror="this.src='https://images.unsplash.com/photo-1544866092-1935c5ef2a8f?auto=format&fit=crop&w=600&q=80'">
+                    </div>
+                    <div class="card-content">
+                        <h3>Bluetooth Connectivity</h3>
+                        <p>Seamlessly pair with haptic feedback wearables, smart walking canes, and discrete audio earpieces via ultra-low latency Bluetooth.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="card-image">
+                        <img src="https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?auto=format&fit=crop&w=600&q=80" alt="Volunteers supporting visually impaired person">
+                    </div>
+                    <div class="card-content">
+                        <h3>Instant Assistance</h3>
+                        <p>Our 24/7 SOS system allows you to request immediate help from the owner with just a single tap, sending your details instantly.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Registration Modal -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-content glass-panel" style="backdrop-filter: blur(20px);">
+            <h2>Welcome to Aura</h2>
+            <p>Please register to start using the assistive vision system.</p>
+            <form id="auth-form">
+                <div class="input-group">
+                    <label for="auth-name">Full Name</label>
+                    <input type="text" id="auth-name" required placeholder="Enter your name">
+                </div>
+                <div class="input-group">
+                    <label for="auth-phone">Mobile Number</label>
+                    <input type="tel" id="auth-phone" required placeholder="03XXXXXXXXX">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Start System</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-brand">
+                <div class="logo">
+                    <span class="logo-text">Aura</span>
+                </div>
+                <p>Empowering the visually impaired with AI technology.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Waitlist Modal -->
+    <div id="waitlist-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <button id="close-modal" class="close-btn" aria-label="Close">&times;</button>
+            <h2>Join the <span class="gradient-text">Waitlist</span></h2>
+            <p>Get early access to Aura and help shape the future of assistive vision.</p>
+            <form id="waitlist-form" class="waitlist-form">
+                <input type="text" id="waitlist-name" placeholder="Your Name" required>
+                <input type="email" id="waitlist-email" placeholder="Your Email address" required>
+                <button type="submit" class="btn-primary large" style="width: 100%;">Get Early Access</button>
+            </form>
+            <div id="waitlist-success" class="hidden">
+                <p style="color: var(--success); font-weight: 600; margin-top: 1rem; text-align: center;">Thank you for joining the waitlist!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- TensorFlow.js and COCO-SSD -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script src="app.js"></script>
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker Registered'))
+                    .catch(err => console.log('Service Worker Failed', err));
+            });
+        }
+    </script>
+</body>
+</html>

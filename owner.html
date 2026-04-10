@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Vision | Owner Dashboard</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .hidden-content { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <div class="logo-dot"></div>
+            <span>Aura <span class="gradient-text">Owner</span></span>
+        </div>
+        <div class="nav-links">
+            <a href="/">Go to Home</a>
+        </div>
+    </nav>
+
+    <div id="admin-content" class="admin-container hidden-content">
+        <header style="margin-bottom: 2rem;">
+            <h1>Owner <span class="gradient-text">Database</span></h1>
+            <p class="text-secondary">Viewing all registered user details and login history.</p>
+        </header>
+
+        <!-- SOS HELP ALERTS (HIGH PRIORITY) -->
+        <div id="sos-alerts-container" class="data-table-container" style="border: 2px solid var(--danger); background: rgba(239, 68, 68, 0.05); margin-bottom: 2rem; display: none;">
+            <div class="table-header" style="background: var(--danger); color: white;">
+                <h3 style="color: white;">🚨 ACTIVE HELP REQUESTS (SOS)</h3>
+                <span id="sos-count" class="badge" style="background: white; color: var(--danger);">0</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Mobile Number</th>
+                            <th>Request Time</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sos-tbody">
+                        <!-- Live SOS alerts will pop up here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Registered Users Table ONLY -->
+        <div class="data-table-container">
+            <div class="table-header">
+                <h3>System User Logs</h3>
+                <button class="btn-export" onclick="exportData('users')">Export JSON</button>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>User Name</th>
+                            <th>Mobile Number</th>
+                            <th>Login Timestamp</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-tbody">
+                        <tr><td colspan="3" class="empty-state">Loading logs...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+        const SECRET_KEY = "aura786";
+        
+        async function initAdmin() {
+            const pass = prompt("Enter Secret Owner Key to access database:");
+            if (pass === SECRET_KEY) {
+                document.getElementById('admin-content').classList.remove('hidden-content');
+                fetchData();
+                // Polling for updates
+                setInterval(fetchData, 15000);
+            } else {
+                alert("Unauthorized Access!");
+                window.location.href = "/";
+            }
+        }
+
+        async function fetchData() {
+            try {
+                // Fetch Users
+                const uRes = await fetch(`${API_URL}/api/users`);
+                const users = await uRes.json();
+                renderUsers(users);
+
+                // Fetch Help Requests
+                const hRes = await fetch(`${API_URL}/api/help`);
+                const helpReqs = await hRes.json();
+                renderHelp(helpReqs);
+            } catch (e) {
+                console.error("Dashboard fetch failed", e);
+            }
+        }
+
+        function renderUsers(users) {
+            const tbody = document.getElementById('users-tbody');
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-state">No users registered yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = users.reverse().map(u => `
+                <tr>
+                    <td style="font-weight: 600;">${u.name}</td>
+                    <td>${u.phone || 'N/A'}</td>
+                    <td class="timestamp">${new Date(u.timestamp).toLocaleString()}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderHelp(requests) {
+            const tbody = document.getElementById('sos-tbody');
+            const container = document.getElementById('sos-alerts-container');
+            const countBadge = document.getElementById('sos-count');
+            
+            if (requests.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            countBadge.textContent = requests.length;
+            
+            tbody.innerHTML = requests.reverse().map(req => `
+                <tr style="background: rgba(239, 68, 68, 0.1);">
+                    <td style="font-weight: bold; color: var(--danger);">${req.name}</td>
+                    <td>${req.phone || 'N/A'}</td>
+                    <td class="timestamp">${new Date(req.timestamp).toLocaleTimeString()}</td>
+                    <td><button class="btn-export" style="background: var(--success);" onclick="alert('Contacting user...')">Acknowledge</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function exportData(type) {
+            alert(`Exporting ${type} logs...`);
+        }
+
+        window.onload = initAdmin;
+    </script>
+
+        function exportData(type) {
+            // Placeholder for export functionality
+            alert(`Exporting ${type} data as JSON... (Not really downloading in this demo)`);
+        }
+
+        // Run security check on load
+        window.onload = initAdmin;
+    </script>
+</body>
+</html>
