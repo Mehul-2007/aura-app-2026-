@@ -498,27 +498,61 @@ footer {
 }
 
 @media (max-width: 900px) {
+    /* Horizontal Scrollable Navbar for Mobile */
+    .navbar {
+        padding: 0.8rem 1rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.8rem;
+        height: auto;
+    }
+
+    .nav-links, .nav-actions {
+        display: flex;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        gap: 1.5rem;
+        padding-bottom: 5px;
+        flex-shrink: 0;
+    }
+
+    .nav-links::-webkit-scrollbar, .nav-actions::-webkit-scrollbar {
+        display: none; /* Keep it clean */
+    }
+
+    .nav-links a, .nav-actions button, .nav-actions span {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .nav-actions {
+        border-top: 1px solid rgba(255,255,255,0.05);
+        padding-top: 0.8rem;
+        gap: 1.2rem;
+    }
+
     .app-container.embedded {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 550px 300px; /* Increased camera height */
+        grid-template-rows: auto 550px 300px;
     }
     
     .camera-controls {
         display: flex;
         align-items: center;
         gap: 0.8rem;
-        overflow-x: auto; /* Enable horizontal sliding */
+        overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         padding: 0.5rem 0;
-        flex: 1; /* Take up remaining space to scroll */
+        flex: 1;
     }
 
     .camera-controls::-webkit-scrollbar {
-        display: none; /* Keep it clean on mobile */
+        display: none;
     }
 
     .camera-controls .primary-cam, .camera-controls .badge {
-        flex-shrink: 0; /* Important: prevents buttons from crushing */
+        flex-shrink: 0;
         white-space: nowrap;
     }
 
@@ -528,15 +562,15 @@ footer {
         align-items: center;
         justify-content: space-between;
         gap: 1rem;
-        overflow: hidden; /* Header itself shouldn't scroll, only the controls div */
+        overflow: hidden;
     }
     
     h1 {
-        font-size: 2.8rem; /* Smaller heading for mobile */
+        font-size: 2.8rem;
     }
     
     .hero {
-        padding-top: 100px; /* Specific top padding to avoid navbar */
+        padding-top: 140px; /* Increased to accommodate two-row navbar on mobile */
     }
 }
 
@@ -560,47 +594,79 @@ footer {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(12px);
     z-index: 9999;
     display: flex;
     align-items: center;
     justify-content: center;
-    opacity: 1;
-    transition: opacity 0.3s ease;
+    transition: all 0.3s ease;
 }
+
 .modal-overlay.hidden {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
+    transform: scale(1.05);
 }
+
 .modal-content {
-    background: var(--bg-surface);
-    padding: 2.5rem;
-    border-radius: 16px;
-    border: 1px solid var(--border-color);
+    background: #1e293b;
+    padding: 3rem;
+    border-radius: 24px;
+    border: 1px solid rgba(255,255,255,0.1);
     width: 90%;
-    max-width: 400px;
+    max-width: 450px;
     text-align: left;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 50px 100px -20px rgba(0,0,0,0.5);
 }
-.modal-content h2 { margin-bottom: 0.5rem; color: #fff; }
-.modal-content p { color: var(--text-secondary); margin-bottom: 2rem; font-size: 0.95rem; }
+
+.modal-content h2 { 
+    font-size: 2rem;
+    margin-bottom: 0.5rem; 
+    color: #fff; 
+}
+
+.modal-content p { 
+    color: var(--text-secondary); 
+    margin-bottom: 2rem; 
+    font-size: 1rem; 
+    line-height: 1.5;
+}
+
 .input-group { margin-bottom: 1.5rem; }
-.input-group label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.input-group label { 
+    display: block; 
+    font-size: 0.8rem; 
+    font-weight: 600; 
+    color: var(--text-secondary); 
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
 .input-group input {
     width: 100%;
-    padding: 0.85rem 1.25rem;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--border-color);
+    padding: 1rem 1.25rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255,255,255,0.1);
     color: #fff;
     font-family: inherit;
+    font-size: 1rem;
     outline: none;
-    transition: border-color 0.3s;
+    transition: all 0.3s;
     box-sizing: border-box;
 }
-.input-group input:focus { border-color: var(--accent-1); }
 
+.input-group input:focus { 
+    border-color: var(--accent-1); 
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
+}
+
+.hidden {
+    display: none !important;
+}
 /* Modal */
 .modal-overlay {
     position: fixed;
