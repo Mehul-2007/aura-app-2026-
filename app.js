@@ -10,76 +10,128 @@ const detectionList = document.getElementById('detection-list');
 const detectionCount = document.getElementById('detection-count');
 const cameraStatusText = document.getElementById('camera-status-text');
 
-// --- User Profile Tracking (Client Side Only) ---
+// --- Secure User Authentication & Tracking ---
 let currentUsername = localStorage.getItem("aura_username");
 let currentUserPhone = localStorage.getItem("aura_phone");
 const userGreeting = document.getElementById("user-greeting");
+const logoutBtn = document.getElementById("logout-btn");
 
 function loadRecentUsers() {
     const usersListEl = document.getElementById("recent-users-list");
     if(usersListEl) {
         if(currentUsername) {
-            // Only show the currently logged in user's profile for privacy
             const phoneMasked = currentUserPhone ? (currentUserPhone.substring(0,4) + '***' + currentUserPhone.slice(-2)) : 'N/A';
             usersListEl.innerHTML = `
-                <li class="detection-item" style="padding: 0.6rem 1rem; margin-bottom: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--accent-1); display: flex; flex-direction: column; gap: 4px;">
-                    <div style="display: flex; justify-content: space-between;">
-                        <span style="font-weight: 600; color: var(--accent-1);">${currentUsername}</span>
-                        <span style="font-size: 0.75rem; color: var(--text-secondary);">Active Now</span>
+                <li class="detection-item" style="padding: 0.8rem 1.2rem; margin-bottom: 0.5rem; background: rgba(56, 189, 248, 0.05); border: 1px solid var(--accent-1); display: flex; flex-direction: column; gap: 4px; border-radius: var(--radius-md);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; color: var(--accent-1); font-size: 1.1rem;">${currentUsername}</span>
+                        <span class="badge" style="font-size: 0.65rem; padding: 0.2rem 0.5rem; margin: 0; background: rgba(16, 185, 129, 0.2); color: var(--success);">ACTIVE SESSION</span>
                     </div>
-                    <div style="font-size: 0.75rem; color: var(--text-secondary);">Your Phone: ${phoneMasked}</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); opacity: 0.8;">Verified Phone: ${phoneMasked}</div>
                 </li>
             `;
         } else {
-            usersListEl.innerHTML = '<li class="empty-state">Welcome! Please login to start.</li>';
+            usersListEl.innerHTML = '<li class="empty-state">Welcome! Please login to your secure account to start using Aura.</li>';
         }
     }
+}
+
+function handleLogout() {
+    localStorage.removeItem("aura_username");
+    localStorage.removeItem("aura_phone");
+    window.location.reload();
 }
 
 function initUserTracking() {
     const authModal = document.getElementById("auth-modal");
     const authForm = document.getElementById("auth-form");
+    const toggleModeBtn = document.getElementById("toggle-auth-mode");
+    const modalTitle = document.getElementById("modal-title");
+    const modalDesc = document.getElementById("modal-desc");
+    const nameGroup = document.getElementById("name-group");
+    const submitBtn = document.getElementById("auth-submit-btn");
+    const toggleText = document.getElementById("toggle-text");
     
-    function updateGreetingAndFetch() {
-        if (userGreeting && currentUsername) {
-            userGreeting.textContent = `Hello, ${currentUsername}`;
+    let isLoginMode = false;
+
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", handleLogout);
+    }
+
+    if (toggleModeBtn) {
+        toggleModeBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            isLoginMode = !isLoginMode;
+            
+            if (isLoginMode) {
+                modalTitle.textContent = "Login to Aura";
+                modalDesc.textContent = "Enter your credentials to resume your session.";
+                nameGroup.style.display = "none";
+                submitBtn.textContent = "Secure Login";
+                toggleText.textContent = "Don't have an account?";
+                toggleModeBtn.textContent = "Sign Up";
+            } else {
+                modalTitle.textContent = "Welcome to Aura";
+                modalDesc.textContent = "Please register to start using the assistive vision system.";
+                nameGroup.style.display = "block";
+                submitBtn.textContent = "Create Account";
+                toggleText.textContent = "Already have an account?";
+                toggleModeBtn.textContent = "Login";
+            }
+        });
+    }
+
+    function updateUIState() {
+        if (currentUsername) {
+            if (userGreeting) userGreeting.textContent = `Hello, ${currentUsername}`;
+            if (logoutBtn) logoutBtn.classList.remove("hidden");
+            if (authModal) authModal.classList.add("hidden");
+        } else {
+            if (userGreeting) userGreeting.textContent = "";
+            if (logoutBtn) logoutBtn.classList.add("hidden");
+            if (authModal) authModal.classList.remove("hidden");
         }
         loadRecentUsers();
     }
 
-    if (!currentUsername || !currentUserPhone) {
-        if(authModal) authModal.classList.remove("hidden");
-        
-        if(authForm) {
-            authForm.addEventListener('submit', (e) => {
-                e.preventDefault();
-                const nameVal = document.getElementById("auth-name").value.trim();
-                const phoneVal = document.getElementById("auth-phone").value.trim();
-                
-                if(nameVal && phoneVal) {
-                    currentUsername = nameVal;
-                    currentUserPhone = phoneVal;
+    if (authForm) {
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const nameVal = document.getElementById("auth-name").value.trim();
+            const phoneVal = document.getElementById("auth-phone").value.trim();
+            const passVal = document.getElementById("auth-pass").value.trim();
+            
+            const endpoint = isLoginMode ? '/api/login' : '/api/signup';
+            const payload = isLoginMode 
+                ? { phone: phoneVal, password: passVal }
+                : { name: nameVal, phone: phoneVal, password: passVal, timestamp: new Date().toISOString() };
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    currentUsername = result.user.name;
+                    currentUserPhone = result.user.phone;
                     localStorage.setItem("aura_username", currentUsername);
                     localStorage.setItem("aura_phone", currentUserPhone);
-                    authModal.classList.add("hidden");
-                    updateGreetingAndFetch();
-
-                    // Send to backend via relative path
-                    fetch('/api/user', {
-                        method: 'POST',
-                        headers:{'Content-Type': 'application/json'},
-                        body: JSON.stringify({ 
-                            name: currentUsername, 
-                            phone: currentUserPhone, 
-                            timestamp: new Date().toISOString() 
-                        })
-                    }).catch(err => console.error("Sync failed", err));
+                    updateUIState();
+                } else {
+                    alert(result.error || "Authentication failed");
                 }
-            });
-        }
-    } else {
-        updateGreetingAndFetch();
+            } catch (err) {
+                console.error("Auth Error:", err);
+                alert("Connection failed. Please try again.");
+            }
+        });
     }
+
+    updateUIState();
 }
 
 // Initialize when dom is ready
@@ -577,3 +629,36 @@ if (helpBtn) {
         }
     });
 }
+
+// --- PWA Installation Logic ---
+let deferredPrompt;
+const installAppBtn = document.getElementById('install-app-btn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    if (installAppBtn) installAppBtn.classList.remove('hidden');
+});
+
+if (installAppBtn) {
+    installAppBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        // We've used the prompt, and can't use it again, throw it away
+        deferredPrompt = null;
+        // Hide the install button
+        installAppBtn.classList.add('hidden');
+    });
+}
+
+window.addEventListener('appinstalled', (event) => {
+    console.log('Aura was installed.');
+    if (installAppBtn) installAppBtn.classList.add('hidden');
+});
