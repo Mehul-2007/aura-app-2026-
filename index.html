@@ -32,6 +32,11 @@
         </div>
         <div class="nav-actions" style="display: flex; align-items: center; gap: 1rem;">
             <span id="user-greeting" style="font-weight: 600; color: var(--accent-2);"></span>
+            <button id="install-app-btn" class="btn-primary hidden" style="background: transparent; border: 1px solid var(--accent-1); color: var(--accent-1);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right:5px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Install App
+            </button>
+            <button id="logout-btn" class="btn-primary hidden" style="background: transparent; border: 1px solid var(--danger); color: var(--danger);">Logout</button>
             <button id="waitlist-btn" class="btn-primary" aria-label="Join Waitlist">Join Waitlist</button>
         </div>
     </nav>
@@ -179,19 +184,27 @@
     <!-- Registration Modal -->
     <div id="auth-modal" class="modal-overlay hidden">
         <div class="modal-content glass-panel" style="backdrop-filter: blur(20px);">
-            <h2>Welcome to Aura</h2>
-            <p>Please register to start using the assistive vision system.</p>
+            <h2 id="modal-title">Welcome to Aura</h2>
+            <p id="modal-desc">Please register to start using the assistive vision system.</p>
             <form id="auth-form">
-                <div class="input-group">
+                <div class="input-group" id="name-group">
                     <label for="auth-name">Full Name</label>
-                    <input type="text" id="auth-name" required placeholder="Enter your name">
+                    <input type="text" id="auth-name" placeholder="Enter your name">
                 </div>
                 <div class="input-group">
                     <label for="auth-phone">Mobile Number</label>
                     <input type="tel" id="auth-phone" required placeholder="03XXXXXXXXX">
                 </div>
-                <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">Start System</button>
+                <div class="input-group">
+                    <label for="auth-pass">Password</label>
+                    <input type="password" id="auth-pass" required placeholder="Enter password">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="btn-primary" style="width: 100%; margin-top: 1rem;">Start System</button>
             </form>
+            <p style="text-align: center; margin-top: 1.5rem; font-size: 0.9rem;">
+                <span id="toggle-text">Already have an account?</span>
+                <a href="#" id="toggle-auth-mode" style="color: var(--accent-1); font-weight: 600;">Login</a>
+            </p>
         </div>
     </div>
 
