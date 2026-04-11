@@ -56,11 +56,11 @@ def get_stats():
             return jsonify({"total_hazards": 0, "logs": []})
     return jsonify({"total_hazards": 0, "logs": []})
 
-@app.route('/api/user', methods=['POST'])
-def add_user():
+@app.route('/api/signup', methods=['POST'])
+def signup():
     data = request.json
-    if not data or not data.get('name'):
-        return jsonify({"error": "No name provided"}), 400
+    if not data or not data.get('phone') or not data.get('password'):
+        return jsonify({"error": "Phone and Password are required"}), 400
     
     users = []
     if os.path.exists(USERS_FILE):
@@ -70,10 +70,16 @@ def add_user():
         except Exception:
             users = []
             
-    # Avoid exact duplicates in a row, or keep track of all logins
+    # Check if user already exists
+    for u in users:
+        if u.get('phone') == data.get('phone'):
+            return jsonify({"error": "User with this phone number already exists"}), 409
+            
+    # Create new user
     user_entry = {
-        "name": data.get('name'),
-        "phone": data.get('phone', 'N/A'),
+        "name": data.get('name', 'Anonymous'),
+        "phone": data.get('phone'),
+        "password": data.get('password'), # In production, this should be hashed
         "timestamp": data.get('timestamp')
     }
     users.append(user_entry)
@@ -81,7 +87,31 @@ def add_user():
     with open(USERS_FILE, 'w') as f:
         json.dump(users, f, indent=4)
         
-    return jsonify({"status": "success", "user": user_entry}), 201
+    return jsonify({"status": "success", "user": {"name": user_entry['name'], "phone": user_entry['phone']}}), 201
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    data = request.json
+    if not data or not data.get('phone') or not data.get('password'):
+        return jsonify({"error": "Phone and Password are required"}), 400
+        
+    if os.path.exists(USERS_FILE):
+        try:
+            with open(USERS_FILE, 'r') as f:
+                users = json.load(f)
+                
+            for u in users:
+                if u.get('phone') == data.get('phone') and u.get('password') == data.get('password'):
+                    return jsonify({
+                        "status": "success", 
+                        "user": {"name": u['name'], "phone": u['phone']}
+                    }), 200
+                    
+            return jsonify({"error": "Invalid phone number or password"}), 401
+        except Exception as e:
+            return jsonify({"error": "Server error during login"}), 500
+            
+    return jsonify({"error": "No users registered yet"}), 404
 
 @app.route('/api/users', methods=['GET'])
 def get_users():
