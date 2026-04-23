@@ -1,6 +1,6 @@
 const video = document.getElementById('webcam');
 const canvas = document.getElementById('overlay');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', { willReadFrequently: true });
 const toggleBtn = document.getElementById('toggle-camera');
 const statusIndicator = document.getElementById('status-indicator');
 const initialState = document.getElementById('initial-state');
@@ -191,13 +191,18 @@ async function startWebcam() {
         video.srcObject = stream;
         
         return new Promise((resolve) => {
-            video.onloadedmetadata = () => {
-                video.play();
-                // Match canvas to video dimensions
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                resolve();
+            const checkMetadata = () => {
+                if (video.videoWidth > 0) {
+                    video.play();
+                    // Match canvas to video dimensions
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    resolve();
+                } else {
+                    requestAnimationFrame(checkMetadata);
+                }
             };
+            video.onloadedmetadata = checkMetadata;
         });
     } catch (err) {
         console.error("Webcam access error:", err);
@@ -239,19 +244,41 @@ function logHazardToBackend(detectionData) {
     }
 }
 
+// --- Label Translation / Optimization ---
+function getFriendlyName(rawLabel) {
+    const labelMap = {
+        'clock': 'Watch / Clock',
+        'book': 'Paper / Book',
+        'cell phone': 'Smartphone',
+        'tv': 'Monitor / Screen',
+        'potted plant': 'Plant',
+        'dining table': 'Table',
+        'couch': 'Sofa / Couch',
+        'handbag': 'Bag',
+        'suitcase': 'Travel Bag / Luggage',
+        'backpack': 'Bag',
+        'laptop': 'Computer / Laptop',
+        'remote': 'Remote Control',
+        'oven': 'Stove / Oven',
+        'keyboard': 'Computer Keyboard'
+    };
+    return labelMap[rawLabel.toLowerCase()] || rawLabel;
+}
+
 // Map to keep track of recently spoken objects
 const recentAnnouncements = new Map();
 
 function announceObject(label) {
+    const friendlyName = getFriendlyName(label);
     const now = Date.now();
     // Only announce the same object once every 7 seconds to prevent speech overlap/spam
-    if (!recentAnnouncements.has(label) || (now - recentAnnouncements.get(label) > 7000)) {
-        recentAnnouncements.set(label, now);
+    if (!recentAnnouncements.has(friendlyName) || (now - recentAnnouncements.get(friendlyName) > 7000)) {
+        recentAnnouncements.set(friendlyName, now);
         
         if ('speechSynthesis' in window) {
             // Cancel any ongoing speech so new objects get priority
             window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(label + " detected");
+            const utterance = new SpeechSynthesisUtterance(friendlyName + " detected");
             utterance.rate = 1.2; // Slightly fast for quick assistive feedback
             utterance.pitch = 1.0;
             window.speechSynthesis.speak(utterance);
@@ -305,8 +332,10 @@ function drawBox(prediction, videoWidth, videoHeight) {
     ctx.rect(x, y, width, height);
     ctx.stroke();
 
+    const friendlyName = getFriendlyName(label);
+
     // Draw Label bg
-    const textStr = `${label.toUpperCase()} | Dist: ${distanceText} | Conf: ${score}%`;
+    const textStr = `${friendlyName.toUpperCase()} | Dist: ${distanceText} | Conf: ${score}%`;
     const textWidth = ctx.measureText(textStr).width;
     ctx.globalAlpha = 0.8;
     ctx.fillRect(x, y - 30, textWidth + 16, 30);
@@ -316,7 +345,7 @@ function drawBox(prediction, videoWidth, videoHeight) {
     ctx.fillStyle = '#000000';
     ctx.fillText(textStr, x + 8, y - 9);
 
-    return { label, score, distance: estDistance, risk, color };
+    return { label: friendlyName, score, distance: estDistance, risk, color };
 }
 
 // Update the UI sidebar
@@ -351,12 +380,29 @@ function updateSidebar(processedDetections) {
     `).join('');
 }
 
+let frameCount = 0;
 // Main Detection Loop
 async function detectFrame() {
     if (!isWebcamStarted || !model) return;
 
-    // Make predictions
-    const predictions = await model.detect(video);
+    frameCount++;
+    
+    // Only process every 3rd frame on mobile to reduce LAG and CPU heat
+    // This makes the UI feel much smoother
+    if (frameCount % 3 !== 0) {
+        animationId = requestAnimationFrame(detectFrame);
+        return;
+    }
+
+    // Double check sizing for mobile resolution changes
+    if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+    }
+
+    // Make predictions with higher sensitivity (minScore: 0.35)
+    // This helps detect smaller objects like watches (as clocks) or books/papers
+    const predictions = await model.detect(video, 20, 0.35);
     
     // Clear previous canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
